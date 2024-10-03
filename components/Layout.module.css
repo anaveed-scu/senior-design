@@ -1,0 +1,37 @@
+.container {
+  display: flex;
+  height: 100vh;
+  background-color: #f0f0f5;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #e0e0e5;
+  padding: 20px;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.navItem {
+  display: block;
+  margin: 15px 0;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+}
+
+.navItem:hover {
+  background-color: #d0d0d5;
+}
+
+.main {
+  flex-grow: 1;
+  padding: 40px;
+  background-color: #ffffff;
+}
+
