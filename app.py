@@ -1,15 +1,14 @@
 from flask import Flask, request, redirect, render_template_string
 import sqlite3
-from sklearn.neighbors import NearestNeighbors
 import numpy as np
+from sklearn.neighbors import NearestNeighbors
 
 app = Flask(__name__)
 
-# Initialize database
+# Initialize the database with necessary tables
 def init_db():
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
-    # Users table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,7 +16,6 @@ def init_db():
             email TEXT NOT NULL
         )
     """)
-    # Borrowers table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS borrowers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +24,6 @@ def init_db():
             reason TEXT NOT NULL
         )
     """)
-    # Lenders table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS lenders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,69 +43,90 @@ def home():
         <html>
         <head>
             <title>Home</title>
+            <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
             <style>
                 body {
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                    background-color: #f4f4f9;
+                    font-family: 'Open Sans', sans-serif;
                     margin: 0;
                     padding: 0;
-                }
-
-                .container {
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     height: 100vh;
-                    flex-direction: column;
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .menu-container {
+                    background-color: white;
+                    border-radius: 8px;
+                    padding: 30px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    width: 100%;
+                    max-width: 600px;
+                    text-align: center;
+                    position: relative;
+                    z-index: 1;
                 }
 
                 h1 {
+                    font-size: 36px;
+                    font-weight: 600;
                     color: #333;
                     margin-bottom: 30px;
                 }
 
-                .button {
-                    display: inline-block;
-                    background-color: #4CAF50;
+                .menu-btn {
+                    background-color: #007bff;
                     color: white;
-                    padding: 15px 32px;
-                    text-align: center;
-                    text-decoration: none;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    width: 100%;
+                    margin: 10px 0;
                     font-size: 18px;
-                    border-radius: 25px;
-                    margin: 10px;
-                    transition: 0.3s ease-in-out;
-                    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+                    cursor: pointer;
+                    border: none;
+                    transition: background-color 0.3s ease;
                 }
 
-                .button:hover {
-                    background-color: #45a049;
-                    transform: scale(1.1);
+                .menu-btn:hover {
+                    background-color: #0056b3;
                 }
 
-                .button:active {
-                    transform: scale(0.95);
+                .background {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: #ff8a00;
+                    background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    animation: gradientBG 10s ease infinite;
+                    z-index: 0;
                 }
 
-                .button-container {
-                    display: flex;
-                    flex-wrap: wrap;
-                    justify-content: center;
-                    gap: 20px;
+                @keyframes gradientBG {
+                    0% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                    50% {
+                        background: linear-gradient(315deg, #ff2a68 0%, #fc4a1a 74%);
+                    }
+                    100% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
                 }
             </style>
         </head>
         <body>
-            <div class="container">
+            <div class="background"></div>
+            <div class="menu-container">
                 <h1>Welcome to the Application</h1>
-                <div class="button-container">
-                    <a href="/borrowers" class="button">Borrowers Form</a>
-                    <a href="/lenders" class="button">Lenders Form</a>
-                    <a href="/display_borrowers" class="button">View Borrowers</a>
-                    <a href="/display_lenders" class="button">View Lenders</a>
-                    <a href="/match" class="button">Match Borrowers and Lenders</a>
-                </div>
+                <button class="menu-btn" onclick="window.location.href='/borrowers'">Borrowers Form</button>
+                <button class="menu-btn" onclick="window.location.href='/lenders'">Lenders Form</button>
+                <button class="menu-btn" onclick="window.location.href='/display_borrowers'">View Borrowers</button>
+                <button class="menu-btn" onclick="window.location.href='/display_lenders'">View Lenders</button>
+                <button class="menu-btn" onclick="window.location.href='/match'">Match Borrowers and Lenders</button>
             </div>
         </body>
         </html>
@@ -140,73 +158,142 @@ def borrowers():
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Borrower Data</title>
+            <title>Borrower Form</title>
+            <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+            <style>
+                body {
+                    font-family: 'Open Sans', sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .form-container {
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    width: 100%;
+                    max-width: 500px;
+                    position: relative;
+                    z-index: 1;
+                }
+
+                h1 {
+                    font-size: 24px;
+                    font-weight: 600;
+                    margin-bottom: 20px;
+                    text-align: center;
+                    color: #333;
+                }
+
+                .input-field {
+                    margin-bottom: 20px;
+                    width: 100%;
+                }
+
+                .input-field input,
+                .input-field textarea {
+                    width: 100%;
+                    padding: 15px;
+                    border-radius: 8px;
+                    border: 1px solid #ddd;
+                    font-size: 16px;
+                    color: #555;
+                }
+
+                .input-field input:focus,
+                .input-field textarea:focus {
+                    border-color: #007bff;
+                    outline: none;
+                }
+
+                .input-field textarea {
+                    resize: vertical;
+                    height: 120px;
+                }
+
+                .submit-btn {
+                    background-color: #007bff;
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    border: none;
+                    font-size: 18px;
+                    cursor: pointer;
+                    width: 100%;
+                    transition: background-color 0.3s;
+                }
+
+                .submit-btn:hover {
+                    background-color: #0056b3;
+                }
+
+                .back-link {
+                    display: block;
+                    text-align: center;
+                    margin-top: 20px;
+                    font-size: 16px;
+                }
+
+                .back-link a {
+                    text-decoration: none;
+                    color: #007bff;
+                }
+
+                .background {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: #ff8a00;
+                    background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    animation: gradientBG 10s ease infinite;
+                    z-index: 0;
+                }
+
+                @keyframes gradientBG {
+                    0% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                    50% {
+                        background: linear-gradient(315deg, #ff2a68 0%, #fc4a1a 74%);
+                    }
+                    100% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                }
+            </style>
         </head>
         <body>
-            <h1>Enter Borrower Data</h1>
-            <form method="POST" action="/borrowers">
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" required>
-                <br>
-                <label for="amount_want_to_borrow">Amount Want to Borrow:</label>
-                <input type="number" id="amount_want_to_borrow" name="amount_want_to_borrow" required>
-                <br>
-                <label for="reason">Reason for Borrowing:</label>
-                <textarea id="reason" name="reason" required></textarea>
-                <br><br>
-                <button type="submit">Submit</button>
-            </form>
-            <br>
-            <a href="/">Go Back</a>
+            <div class="background"></div>
+            <div class="form-container">
+                <h1>Enter Borrower Data</h1>
+                <form method="POST" action="/borrowers">
+                    <div class="input-field">
+                        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                    </div>
+                    <div class="input-field">
+                        <input type="number" id="amount_want_to_borrow" name="amount_want_to_borrow" placeholder="Amount to Borrow" required>
+                    </div>
+                    <div class="input-field">
+                        <textarea id="reason" name="reason" placeholder="Reason for borrowing" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit</button>
+                </form>
+                <div class="back-link">
+                    <a href="/">Go Back</a>
+                </div>
+            </div>
         </body>
         </html>
         """
-    )
-
-# Route: Display Borrowers
-@app.route("/display_borrowers")
-def display_borrowers():
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM borrowers")
-    rows = cursor.fetchall()
-    conn.close()
-
-    return render_template_string(
-        """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Borrower Records</title>
-        </head>
-        <body>
-            <h1>All Borrowers</h1>
-            <table border="1">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Amount Want to Borrow</th>
-                        <th>Reason</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in rows %}
-                    <tr>
-                        <td>{{ row[0] }}</td>
-                        <td>{{ row[1] }}</td>
-                        <td>{{ row[2] }}</td>
-                        <td>{{ row[3] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <br>
-            <a href="/">Go Back</a>
-        </body>
-        </html>
-        """,
-        rows=rows
     )
 
 # Route: Lenders (Input Form)
@@ -233,25 +320,246 @@ def lenders():
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Lender Data</title>
+            <title>Lender Form</title>
+            <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+            <style>
+                body {
+                    font-family: 'Open Sans', sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .form-container {
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    width: 100%;
+                    max-width: 500px;
+                    position: relative;
+                    z-index: 1;
+                }
+
+                h1 {
+                    font-size: 24px;
+                    font-weight: 600;
+                    margin-bottom: 20px;
+                    text-align: center;
+                    color: #333;
+                }
+
+                .input-field {
+                    margin-bottom: 20px;
+                    width: 100%;
+                }
+
+                .input-field input {
+                    width: 100%;
+                    padding: 15px;
+                    border-radius: 8px;
+                    border: 1px solid #ddd;
+                    font-size: 16px;
+                    color: #555;
+                }
+
+                .input-field input:focus {
+                    border-color: #007bff;
+                    outline: none;
+                }
+
+                .submit-btn {
+                    background-color: #007bff;
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    border: none;
+                    font-size: 18px;
+                    cursor: pointer;
+                    width: 100%;
+                    transition: background-color 0.3s;
+                }
+
+                .submit-btn:hover {
+                    background-color: #0056b3;
+                }
+
+                .back-link {
+                    display: block;
+                    text-align: center;
+                    margin-top: 20px;
+                    font-size: 16px;
+                }
+
+                .back-link a {
+                    text-decoration: none;
+                    color: #007bff;
+                }
+
+                .background {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: #ff8a00;
+                    background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    animation: gradientBG 10s ease infinite;
+                    z-index: 0;
+                }
+
+                @keyframes gradientBG {
+                    0% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                    50% {
+                        background: linear-gradient(315deg, #ff2a68 0%, #fc4a1a 74%);
+                    }
+                    100% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                }
+            </style>
         </head>
         <body>
-            <h1>Enter Lender Data</h1>
-            <form method="POST" action="/lenders">
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" required>
-                <br>
-                <label for="amount_want_to_lend">Amount Want to Lend:</label>
-                <input type="number" id="amount_want_to_lend" name="amount_want_to_lend" required>
-                <br><br>
-                <button type="submit">Submit</button>
-            </form>
-            <br>
-            <a href="/">Go Back</a>
+            <div class="background"></div>
+            <div class="form-container">
+                <h1>Enter Lender Data</h1>
+                <form method="POST" action="/lenders">
+                    <div class="input-field">
+                        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                    </div>
+                    <div class="input-field">
+                        <input type="number" id="amount_want_to_lend" name="amount_want_to_lend" placeholder="Amount to Lend" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit</button>
+                </form>
+                <div class="back-link">
+                    <a href="/">Go Back</a>
+                </div>
+            </div>
         </body>
         </html>
         """
     )
+
+# Route: Display Borrowers
+@app.route("/display_borrowers")
+def display_borrowers():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM borrowers")
+    borrowers = cursor.fetchall()
+    conn.close()
+
+    return render_template_string(
+        """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Borrowers</title>
+            <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+            <style>
+                body {
+                    font-family: 'Open Sans', sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .table-container {
+                    background-color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                    width: 100%;
+                    max-width: 600px;
+                    position: relative;
+                    z-index: 1;
+                    overflow-y: auto;
+                    height: 70vh;
+                }
+
+                h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+
+                th, td {
+                    padding: 12px;
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                }
+
+                .background {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: #ff8a00;
+                    background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    animation: gradientBG 10s ease infinite;
+                    z-index: 0;
+                }
+
+                @keyframes gradientBG {
+                    0% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                    50% {
+                        background: linear-gradient(315deg, #ff2a68 0%, #fc4a1a 74%);
+                    }
+                    100% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="background"></div>
+            <div class="table-container">
+                <h1>Borrowers</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for borrower in borrowers %}
+                            <tr>
+                                <td>{{ borrower[1] }}</td>
+                                <td>{{ borrower[2] }}</td>
+                                <td>{{ borrower[3] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="back-link">
+                    <a href="/">Go Back</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        """, borrowers=borrowers)
 
 # Route: Display Lenders
 @app.route("/display_lenders")
@@ -259,7 +567,7 @@ def display_lenders():
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM lenders")
-    rows = cursor.fetchall()
+    lenders = cursor.fetchall()
     conn.close()
 
     return render_template_string(
@@ -267,78 +575,142 @@ def display_lenders():
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Lender Records</title>
+            <title>Lenders</title>
+            <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+            <style>
+                body {
+                    font-family: 'Open Sans', sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .table-container {
+                    background-color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                    width: 100%;
+                    max-width: 600px;
+                    position: relative;
+                    z-index: 1;
+                    overflow-y: auto;
+                    height: 70vh;
+                }
+
+                h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+
+                th, td {
+                    padding: 12px;
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                }
+
+                .background {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: #ff8a00;
+                    background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    animation: gradientBG 10s ease infinite;
+                    z-index: 0;
+                }
+
+                @keyframes gradientBG {
+                    0% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                    50% {
+                        background: linear-gradient(315deg, #ff2a68 0%, #fc4a1a 74%);
+                    }
+                    100% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                }
+            </style>
         </head>
         <body>
-            <h1>All Lenders</h1>
-            <table border="1">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Amount Want to Lend</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in rows %}
-                    <tr>
-                        <td>{{ row[0] }}</td>
-                        <td>{{ row[1] }}</td>
-                        <td>{{ row[2] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <br>
-            <a href="/">Go Back</a>
+            <div class="background"></div>
+            <div class="table-container">
+                <h1>Lenders</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lender in lenders %}
+                            <tr>
+                                <td>{{ lender[1] }}</td>
+                                <td>{{ lender[2] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="back-link">
+                    <a href="/">Go Back</a>
+                </div>
+            </div>
         </body>
         </html>
-        """,
-        rows=rows
-    )
+        """, lenders=lenders)
 
-# Route: Match Borrowers and Lenders with ML Algorithm (KNN)
+# Route: Match Borrowers and Lenders using Machine Learning
 @app.route("/match")
 def match():
-    # Fetch borrowers and lenders from the database
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
-    
-    # Get all borrowers
+
+    # Fetch all borrowers and lenders
     cursor.execute("SELECT * FROM borrowers")
     borrowers = cursor.fetchall()
-    
-    # Get all lenders
     cursor.execute("SELECT * FROM lenders")
     lenders = cursor.fetchall()
-    
     conn.close()
 
-    # Prepare data for machine learning model
-    borrower_amounts = np.array([borrower[2] for borrower in borrowers]).reshape(-1, 1)  # Borrower amounts (amount_want_to_borrow)
-    lender_amounts = np.array([lender[2] for lender in lenders]).reshape(-1, 1)  # Lender amounts (amount_want_to_lend)
+    # Prepare data for KNN model: Borrowers' and Lenders' amounts
+    borrowers_data = np.array([borrower[2] for borrower in borrowers]).reshape(-1, 1)  # Borrowing amounts
+    lenders_data = np.array([lender[2] for lender in lenders]).reshape(-1, 1)  # Lending amounts
 
-    # Use K-Nearest Neighbors to find the closest lender for each borrower
-    knn = NearestNeighbors(n_neighbors=1)  # We're only interested in the closest lender
-    knn.fit(lender_amounts)  # Fit the model using lender amounts
+    # Use KNN to find closest lender for each borrower
+    knn = NearestNeighbors(n_neighbors=1)  # We want to find the closest match
+    knn.fit(lenders_data)
 
-    # Find the closest lenders for each borrower
     matches = []
+
     for borrower in borrowers:
-        borrower_id, borrower_name, amount_to_borrow, reason = borrower
-        distance, index = knn.kneighbors([[amount_to_borrow]])  # Find closest lender
+        borrower_name = borrower[1]
+        borrower_amount = borrower[2]
 
-        closest_lender = lenders[index[0][0]]  # Get the closest lender based on index
-        lender_name = closest_lender[1]
-        lender_amount = closest_lender[2]
+        # Find the closest lender to this borrower using KNN
+        distances, indices = knn.kneighbors([[borrower_amount]])  # Find nearest lender
+        closest_lender_idx = indices[0][0]
+        closest_lender_distance = distances[0][0]
+        closest_lender = lenders[closest_lender_idx]
 
-        # Store the match
         matches.append({
-            "borrower": borrower_name,
-            "borrower_id": borrower_id,
-            "borrower_amount": amount_to_borrow,
-            "lender": lender_name,
-            "lender_amount": lender_amount,
+            'borrower': borrower_name,
+            'borrowed_amount': borrower_amount,
+            'lender': closest_lender[1],
+            'lended_amount': closest_lender[2],
+            'distance': closest_lender_distance
         })
 
     return render_template_string(
@@ -346,110 +718,112 @@ def match():
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Match Borrowers and Lenders</title>
+            <title>Matches</title>
+            <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
             <style>
-                .container {
+                body {
+                    font-family: 'Open Sans', sans-serif;
+                    margin: 0;
+                    padding: 0;
                     display: flex;
-                    justify-content: space-between;
-                    gap: 20px;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    overflow: hidden;
+                    position: relative;
                 }
-                .box {
-                    width: 45%;
-                    padding: 10px;
-                    border: 1px solid #ccc;
-                    border-radius: 5px;
+
+                .table-container {
+                    background-color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                    width: 100%;
+                    max-width: 600px;
+                    position: relative;
+                    z-index: 1;
+                    overflow-y: auto;
+                    height: 70vh;
                 }
+
+                h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+
                 table {
                     width: 100%;
                     border-collapse: collapse;
                 }
+
                 th, td {
-                    padding: 8px;
+                    padding: 12px;
                     text-align: left;
-                    border: 1px solid #ddd;
+                    border-bottom: 1px solid #ddd;
+                }
+
+                .background {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: #ff8a00;
+                    background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    animation: gradientBG 10s ease infinite;
+                    z-index: 0;
+                }
+
+                @keyframes gradientBG {
+                    0% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
+                    50% {
+                        background: linear-gradient(315deg, #ff2a68 0%, #fc4a1a 74%);
+                    }
+                    100% {
+                        background: linear-gradient(315deg, #ff8a00 0%, #da1b60 74%);
+                    }
                 }
             </style>
         </head>
         <body>
-            <h1>Matching Borrowers and Lenders</h1>
-
-            <div class="container">
-                <div class="box">
-                    <h2>Borrowers</h2>
-                    <table>
-                        <thead>
+            <div class="background"></div>
+            <div class="table-container">
+                <h1>Matched Borrowers and Lenders</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Borrower</th>
+                            <th>Amount Borrowed</th>
+                            <th>Lender</th>
+                            <th>Amount Lended</th>
+                            <th>Match Distance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for match in matches %}
                             <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Amount to Borrow</th>
-                                <th>Reason</th>
+                                <td>{{ match['borrower'] }}</td>
+                                <td>{{ match['borrowed_amount'] }}</td>
+                                <td>{{ match['lender'] }}</td>
+                                <td>{{ match['lended_amount'] }}</td>
+                                <td>{{ match['distance'] }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for borrower in borrowers %}
-                            <tr>
-                                <td>{{ borrower[0] }}</td>
-                                <td>{{ borrower[1] }}</td>
-                                <td>{{ borrower[2] }}</td>
-                                <td>{{ borrower[3] }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="box">
-                    <h2>Lenders</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Amount to Lend</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for lender in lenders %}
-                            <tr>
-                                <td>{{ lender[0] }}</td>
-                                <td>{{ lender[1] }}</td>
-                                <td>{{ lender[2] }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="back-link">
+                    <a href="/">Go Back</a>
                 </div>
             </div>
-
-            <h2>Matching Results</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Borrower Name</th>
-                        <th>Amount to Borrow</th>
-                        <th>Lender Name</th>
-                        <th>Lender Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for match in matches %}
-                    <tr>
-                        <td>{{ match.borrower }}</td>
-                        <td>{{ match.borrower_amount }}</td>
-                        <td>{{ match.lender }}</td>
-                        <td>{{ match.lender_amount }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <a href="/">Go Back</a>
         </body>
         </html>
-        """,
-        borrowers=borrowers,
-        lenders=lenders,
-        matches=matches
-    )
+        """, matches=matches)
 
 if __name__ == "__main__":
+    # Initialize DB
+    init_db()
+
+    # Run the Flask app
     app.run(debug=True)
