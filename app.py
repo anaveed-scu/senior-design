@@ -46,16 +46,70 @@ def home():
         <html>
         <head>
             <title>Home</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    background-color: #f4f4f9;
+                    margin: 0;
+                    padding: 0;
+                }
+
+                .container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    flex-direction: column;
+                }
+
+                h1 {
+                    color: #333;
+                    margin-bottom: 30px;
+                }
+
+                .button {
+                    display: inline-block;
+                    background-color: #4CAF50;
+                    color: white;
+                    padding: 15px 32px;
+                    text-align: center;
+                    text-decoration: none;
+                    font-size: 18px;
+                    border-radius: 25px;
+                    margin: 10px;
+                    transition: 0.3s ease-in-out;
+                    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+                }
+
+                .button:hover {
+                    background-color: #45a049;
+                    transform: scale(1.1);
+                }
+
+                .button:active {
+                    transform: scale(0.95);
+                }
+
+                .button-container {
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    gap: 20px;
+                }
+            </style>
         </head>
         <body>
-            <h1>Welcome to the AI-Driven Microfinance Application</h1>
-            <ul>
-                <li><a href="/borrowers">Borrowers Form</a></li>
-                <li><a href="/lenders">Lenders Form</a></li>
-                <li><a href="/display_borrowers">View Borrowers</a></li>
-                <li><a href="/display_lenders">View Lenders</a></li>
-                <li><a href="/match">Match Borrowers and Lenders</a></li>
-            </ul>
+            <div class="container">
+                <h1>Welcome to the Application</h1>
+                <div class="button-container">
+                    <a href="/borrowers" class="button">Borrowers Form</a>
+                    <a href="/lenders" class="button">Lenders Form</a>
+                    <a href="/display_borrowers" class="button">View Borrowers</a>
+                    <a href="/display_lenders" class="button">View Lenders</a>
+                    <a href="/match" class="button">Match Borrowers and Lenders</a>
+                </div>
+            </div>
         </body>
         </html>
         """
